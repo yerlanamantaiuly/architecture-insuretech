@@ -1,33 +1,42 @@
-Проверка окружения для локального запуска задания 2
+Проверка окружения и успешного запуска задания 2
 ==================================================
 
+Дата проверки: Fri Jul 10 04:43:44 PM +05 2026
+
 Установленные инструменты:
-- клиент kubectl: v1.30.7
-- helm: v3.21.2
+- docker: Docker version 29.3.1, build c2be9cc
 - minikube: v1.38.1
-- клиент docker: 29.1.3
-- locust: 2.45.0
-- python: 3.12.3
+- kubectl client: Client Version: v1.34.2 Kustomize Version: v5.7.1 
+- helm: v4.2.2+gb05881c
+- python: Python 3.12.3
+- pip: pip 24.0 from /usr/lib/python3/dist-packages/pip (python 3.12)
+- locust: locust  from /usr/lib/python3/dist-packages/locust (python 3.12.3)
 
-Попытка запуска Minikube:
+Ресурсы сервера:
+- CPU: 8
+- память, MB:
+               total        used        free      shared  buff/cache   available
+Mem:           15880        2963        6497          87        6835       12916
+Swap:           4095           0        4095
 
-Команда:
-minikube start --driver=docker --cpus=1 --memory=3072 --force
+Запуск Minikube:
+Команда: minikube start --driver=docker --cpus=2 --memory=4096 --force
+Результат: кластер Minikube успешно запущен через Docker-драйвер.
 
-Результат:
-Docker видит меньше 2 CPU, а Kubernetes требует минимум 2 CPU.
-Запрошенное количество CPU равно 1, что меньше минимально допустимого значения 2.
-Docker видит только 961 MB памяти, при этом в команде было запрошено 3072 MB.
-В системе доступно только 961 MiB памяти, что меньше минимально необходимых 1800 MiB для Kubernetes.
+Metrics Server:
+Команда: minikube addons enable metrics-server
+Результат: addon включён, deployment metrics-server доступен.
 
-Вывод:
-Манифесты и инструкция по запуску подготовлены, но runtime-доказательства работы HPA нужно собрать на машине, где для Minikube доступно минимум 2 CPU и 1800 MiB памяти.
-Locust установлен, команда `locust --version` вернула версию 2.45.0.
+Состояние кластера:
+NAME       STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION      CONTAINER-RUNTIME
+minikube   Ready    control-plane   37m   v1.35.1   192.168.58.2   <none>        Debian GNU/Linux 12 (bookworm)   6.17.0-35-generic   docker://29.2.1
 
-Проверка YAML-парсинга:
-- Task2/deployment.yaml: OK (Deployment)
-- Task2/service.yaml: OK (Service)
-- Task2/hpa-memory.yaml: OK (HorizontalPodAutoscaler)
-- Task2/hpa-rps.yaml: OK (HorizontalPodAutoscaler)
-- Task2/prometheus-values.yaml: OK (values-файл Helm)
-- Task2/prometheus-adapter-values.yaml: OK (values-файл Helm)
+NAME             READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS       IMAGES                                                                                                                         SELECTOR
+metrics-server   1/1     1            1           36m   metrics-server   registry.k8s.io/metrics-server/metrics-server:v0.8.1@sha256:b2d2efaf5ac3b366ed0f839d2412a2c4279d4fc2a2a733f12c52133faed36c41   k8s-app=metrics-server
+
+Проверка приложения и HPA после прогонов:
+NAME                  READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES             SELECTOR
+insuretech-demo-app   4/4     4            4           36m   app          python:3.12-slim   app=insuretech-demo-app
+
+NAME                      REFERENCE                        TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
+insuretech-demo-app-rps   Deployment/insuretech-demo-app   11416m/10   1         10        4          15m

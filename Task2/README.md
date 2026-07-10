@@ -5,7 +5,7 @@
 Запуск локального кластера и metrics-server:
 
 ```bash
-minikube start
+minikube start --driver=docker --cpus=2 --memory=4096
 minikube addons enable metrics-server
 ```
 
@@ -18,11 +18,13 @@ kubectl apply -f hpa-memory.yaml
 kubectl get hpa insuretech-demo-app-memory --watch
 ```
 
+Если Minikube запускается от пользователя `root`, для Docker-драйвера может потребоваться флаг `--force`.
+
 Генерация нагрузки:
 
 ```bash
 kubectl port-forward service/insuretech-demo-app 8080:8080
-locust -f locustfile.py --host http://localhost:8080
+locust -f locustfile.py --host http://localhost:8080 --headless -u 80 -r 20 -t 90s --only-summary
 ```
 
 Команды для сохранения доказательств масштабирования:
@@ -32,6 +34,8 @@ kubectl describe hpa insuretech-demo-app-memory > evidence-memory-hpa.txt
 kubectl get deployment insuretech-demo-app -o wide >> evidence-memory-hpa.txt
 kubectl get pods -l app=insuretech-demo-app -o wide >> evidence-memory-hpa.txt
 ```
+
+Результат реального запуска сохранён в файле `evidence-memory-hpa.txt`: HPA по памяти увеличил Deployment до 6 pod.
 
 ## Часть 2. Масштабирование по количеству запросов в секунду
 
@@ -44,6 +48,8 @@ helm install prometheus prometheus-community/prometheus -f prometheus-values.yam
 helm install prometheus-adapter prometheus-community/prometheus-adapter -f prometheus-adapter-values.yaml
 kubectl apply -f hpa-rps.yaml
 ```
+
+Для проверки HPA по RPS сценарий выполнялся отдельно от HPA по памяти: после сохранения доказательств по памяти HPA `insuretech-demo-app-memory` был удалён из кластера, а Deployment возвращён к 1 pod. Это исключает одновременное управление одним Deployment двумя HPA.
 
 Проверка сбора метрик:
 
@@ -73,4 +79,6 @@ kubectl get deployment insuretech-demo-app -o wide >> evidence-rps-hpa.txt
 kubectl get pods -l app=insuretech-demo-app -o wide >> evidence-rps-hpa.txt
 ```
 
-В качестве доказательств для сдачи можно приложить либо скриншоты Kubernetes Dashboard и Prometheus UI, либо текстовые файлы `evidence-memory-hpa.txt` и `evidence-rps-hpa.txt`, полученные командами выше.
+Результат реального запуска сохранён в файле `evidence-rps-hpa.txt`: custom metric `http_requests_per_second` стала доступна через Kubernetes API, Locust выполнил 5071 запрос без ошибок, HPA по RPS увеличил Deployment до 3 pod во время сбора evidence и до 4 pod после следующего цикла пересчёта.
+
+Дополнительно файл `evidence-environment.txt` содержит версии инструментов, ресурсы сервера, состояние Minikube, metrics-server и итоговое состояние HPA.
