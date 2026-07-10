@@ -1,0 +1,33 @@
+Проверка окружения для локального запуска задания 2
+==================================================
+
+Установленные инструменты:
+- клиент kubectl: v1.30.7
+- helm: v3.21.2
+- minikube: v1.38.1
+- клиент docker: 29.1.3
+- locust: 2.45.0
+- python: 3.12.3
+
+Попытка запуска Minikube:
+
+Команда:
+minikube start --driver=docker --cpus=1 --memory=3072 --force
+
+Результат:
+Docker видит меньше 2 CPU, а Kubernetes требует минимум 2 CPU.
+Запрошенное количество CPU равно 1, что меньше минимально допустимого значения 2.
+Docker видит только 961 MB памяти, при этом в команде было запрошено 3072 MB.
+В системе доступно только 961 MiB памяти, что меньше минимально необходимых 1800 MiB для Kubernetes.
+
+Вывод:
+Манифесты и инструкция по запуску подготовлены, но runtime-доказательства работы HPA нужно собрать на машине, где для Minikube доступно минимум 2 CPU и 1800 MiB памяти.
+Locust установлен, команда `locust --version` вернула версию 2.45.0.
+
+Проверка YAML-парсинга:
+- Task2/deployment.yaml: OK (Deployment)
+- Task2/service.yaml: OK (Service)
+- Task2/hpa-memory.yaml: OK (HorizontalPodAutoscaler)
+- Task2/hpa-rps.yaml: OK (HorizontalPodAutoscaler)
+- Task2/prometheus-values.yaml: OK (values-файл Helm)
+- Task2/prometheus-adapter-values.yaml: OK (values-файл Helm)
