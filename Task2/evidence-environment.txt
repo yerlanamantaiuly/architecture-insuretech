@@ -1,0 +1,42 @@
+Проверка окружения и успешного запуска задания 2
+==================================================
+
+Дата проверки: Fri Jul 10 04:43:44 PM +05 2026
+
+Установленные инструменты:
+- docker: Docker version 29.3.1, build c2be9cc
+- minikube: v1.38.1
+- kubectl client: Client Version: v1.34.2 Kustomize Version: v5.7.1 
+- helm: v4.2.2+gb05881c
+- python: Python 3.12.3
+- pip: pip 24.0 from /usr/lib/python3/dist-packages/pip (python 3.12)
+- locust: locust  from /usr/lib/python3/dist-packages/locust (python 3.12.3)
+
+Ресурсы сервера:
+- CPU: 8
+- память, MB:
+               total        used        free      shared  buff/cache   available
+Mem:           15880        2963        6497          87        6835       12916
+Swap:           4095           0        4095
+
+Запуск Minikube:
+Команда: minikube start --driver=docker --cpus=2 --memory=4096 --force
+Результат: кластер Minikube успешно запущен через Docker-драйвер.
+
+Metrics Server:
+Команда: minikube addons enable metrics-server
+Результат: addon включён, deployment metrics-server доступен.
+
+Состояние кластера:
+NAME       STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION      CONTAINER-RUNTIME
+minikube   Ready    control-plane   37m   v1.35.1   192.168.58.2   <none>        Debian GNU/Linux 12 (bookworm)   6.17.0-35-generic   docker://29.2.1
+
+NAME             READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS       IMAGES                                                                                                                         SELECTOR
+metrics-server   1/1     1            1           36m   metrics-server   registry.k8s.io/metrics-server/metrics-server:v0.8.1@sha256:b2d2efaf5ac3b366ed0f839d2412a2c4279d4fc2a2a733f12c52133faed36c41   k8s-app=metrics-server
+
+Проверка приложения и HPA после прогонов:
+NAME                  READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES             SELECTOR
+insuretech-demo-app   4/4     4            4           36m   app          python:3.12-slim   app=insuretech-demo-app
+
+NAME                      REFERENCE                        TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
+insuretech-demo-app-rps   Deployment/insuretech-demo-app   11416m/10   1         10        4          15m

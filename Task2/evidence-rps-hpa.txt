@@ -1,0 +1,77 @@
+Доказательства работы HPA по RPS
+Дата сбора: Fri Jul 10 04:42:18 PM +05 2026
+
+Команда: kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1/namespaces/default/pods/*/http_requests_per_second"
+{"kind":"MetricValueList","apiVersion":"custom.metrics.k8s.io/v1beta1","metadata":{},"items":[{"describedObject":{"kind":"Pod","namespace":"default","name":"insuretech-demo-app-77c6fc8bfc-pmrvh","apiVersion":"/v1"},"metricName":"http_requests_per_second","timestamp":"2026-07-10T11:42:18Z","value":"150m","selector":null},{"describedObject":{"kind":"Pod","namespace":"default","name":"insuretech-demo-app-77c6fc8bfc-vc96f","apiVersion":"/v1"},"metricName":"http_requests_per_second","timestamp":"2026-07-10T11:42:18Z","value":"34300m","selector":null},{"describedObject":{"kind":"Pod","namespace":"default","name":"insuretech-demo-app-77c6fc8bfc-zblqc","apiVersion":"/v1"},"metricName":"http_requests_per_second","timestamp":"2026-07-10T11:42:18Z","value":"150m","selector":null}]}
+
+
+Команда: kubectl describe hpa insuretech-demo-app-rps
+Name:                                  insuretech-demo-app-rps
+Namespace:                             default
+Labels:                                <none>
+Annotations:                           <none>
+CreationTimestamp:                     Fri, 10 Jul 2026 16:28:25 +0500
+Reference:                             Deployment/insuretech-demo-app
+Metrics:                               ( current / target )
+  "http_requests_per_second" on pods:  11533m / 10
+Min replicas:                          1
+Max replicas:                          10
+Behavior:
+  Scale Up:
+    Stabilization Window: 30 seconds
+    Select Policy: Max
+    Policies:
+      - Type: Percent  Value: 100  Period: 60 seconds
+      - Type: Pods     Value: 4    Period: 60 seconds
+  Scale Down:
+    Stabilization Window: 300 seconds
+    Select Policy: Max
+    Policies:
+      - Type: Percent  Value: 50  Period: 60 seconds
+Deployment pods:       3 current / 3 desired
+Conditions:
+  Type            Status  Reason              Message
+  ----            ------  ------              -------
+  AbleToScale     True    ScaleUpStabilized   recent recommendations were lower than current one, applying the lowest recent recommendation
+  ScalingActive   True    ValidMetricFound    the HPA was able to successfully calculate a replica count from pods metric http_requests_per_second
+  ScalingLimited  False   DesiredWithinRange  the desired count is within the acceptable range
+Events:
+  Type     Reason                        Age                  From                       Message
+  ----     ------                        ----                 ----                       -------
+  Warning  FailedGetPodsMetric           6m6s (x4 over 10m)   horizontal-pod-autoscaler  did not receive metrics for targeted pods (pods might be unready)
+  Warning  FailedComputeMetricsReplicas  6m6s (x4 over 10m)   horizontal-pod-autoscaler  invalid metrics (1 invalid out of 1), first error is: failed to get pods metric value: did not receive metrics for targeted pods (pods might be unready)
+  Warning  FailedGetPodsMetric           5m20s (x8 over 10m)  horizontal-pod-autoscaler  unable to get metric http_requests_per_second: no metrics returned from custom metrics API
+  Warning  FailedComputeMetricsReplicas  5m20s (x8 over 10m)  horizontal-pod-autoscaler  invalid metrics (1 invalid out of 1), first error is: failed to get pods metric value: unable to get metric http_requests_per_second: no metrics returned from custom metrics API
+  Normal   SuccessfulRescale             4m35s                horizontal-pod-autoscaler  New size: 2; reason: pods metric http_requests_per_second above target
+  Normal   SuccessfulRescale             3m34s                horizontal-pod-autoscaler  New size: 3; reason: pods metric http_requests_per_second above target
+
+Команда: kubectl get deployment insuretech-demo-app -o wide
+NAME                  READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES             SELECTOR
+insuretech-demo-app   3/3     3            3           34m   app          python:3.12-slim   app=insuretech-demo-app
+
+Команда: kubectl get pods -l app=insuretech-demo-app -o wide
+NAME                                   READY   STATUS    RESTARTS   AGE     IP            NODE       NOMINATED NODE   READINESS GATES
+insuretech-demo-app-77c6fc8bfc-pmrvh   1/1     Running   0          3m35s   10.244.0.23   minikube   <none>           <none>
+insuretech-demo-app-77c6fc8bfc-vc96f   1/1     Running   0          6m53s   10.244.0.21   minikube   <none>           <none>
+insuretech-demo-app-77c6fc8bfc-zblqc   1/1     Running   0          4m36s   10.244.0.22   minikube   <none>           <none>
+
+Итоги Locust на момент завершения прогона
+[2026-07-10 16:40:49,165] probook430/INFO/locust.main: Run time limit set to 150 seconds
+[2026-07-10 16:40:49,166] probook430/INFO/locust.main: Starting Locust 
+[2026-07-10 16:40:49,166] probook430/INFO/locust.runners: Ramping to 120 users at a rate of 30.00 per second
+[2026-07-10 16:40:52,184] probook430/INFO/locust.runners: All users spawned: {"WebsiteUser": 120} (120 total users)
+[2026-07-10 16:43:19,035] probook430/INFO/locust.main: --run-time limit reached, shutting down
+[2026-07-10 16:43:19,116] probook430/INFO/locust.main: Shutting down (exit code 0)
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /                                                                               5071     0(0.00%) |    533     507     587    530 |   33.84        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      5071     0(0.00%) |    533     507     587    530 |   33.84        0.00
+
+Response time percentiles (approximated)
+Type     Name                                                                                  50%    66%    75%    80%    90%    95%    98%    99%  99.9% 99.99%   100% # reqs
+--------|--------------------------------------------------------------------------------|--------|------|------|------|------|------|------|------|------|------|------|------
+GET      /                                                                                     530    540    540    540    540    550    560    570    590    590    590   5071
+--------|--------------------------------------------------------------------------------|--------|------|------|------|------|------|------|------|------|------|------|------
+         Aggregated                                                                            530    540    540    540    540    550    560    570    590    590    590   5071
+

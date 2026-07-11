@@ -1,0 +1,62 @@
+Доказательства работы HPA по памяти
+Дата сбора: Fri Jul 10 04:16:38 PM +05 2026
+
+Команда: kubectl describe hpa insuretech-demo-app-memory
+Name:                                                     insuretech-demo-app-memory
+Namespace:                                                default
+Labels:                                                   <none>
+Annotations:                                              <none>
+CreationTimestamp:                                        Fri, 10 Jul 2026 16:07:24 +0500
+Reference:                                                Deployment/insuretech-demo-app
+Metrics:                                                  ( current / target )
+  resource memory on pods  (as a percentage of request):  100% (30786Ki) / 80%
+Min replicas:                                             1
+Max replicas:                                             10
+Behavior:
+  Scale Up:
+    Stabilization Window: 30 seconds
+    Select Policy: Max
+    Policies:
+      - Type: Percent  Value: 100  Period: 60 seconds
+      - Type: Pods     Value: 4    Period: 60 seconds
+  Scale Down:
+    Stabilization Window: 300 seconds
+    Select Policy: Max
+    Policies:
+      - Type: Percent  Value: 50  Period: 60 seconds
+Deployment pods:       6 current / 6 desired
+Conditions:
+  Type            Status  Reason              Message
+  ----            ------  ------              -------
+  AbleToScale     True    ScaleUpStabilized   recent recommendations were lower than current one, applying the lowest recent recommendation
+  ScalingActive   True    ValidMetricFound    the HPA was able to successfully calculate a replica count from memory resource utilization (percentage of request)
+  ScalingLimited  False   DesiredWithinRange  the desired count is within the acceptable range
+Events:
+  Type     Reason                        Age                     From                       Message
+  ----     ------                        ----                    ----                       -------
+  Warning  FailedComputeMetricsReplicas  6m13s (x12 over 8m58s)  horizontal-pod-autoscaler  invalid metrics (1 invalid out of 1), first error is: failed to get memory resource metric value: failed to get memory utilization: unable to get metrics for resource memory: no metrics returned from resource metrics API
+  Warning  FailedGetResourceMetric       3m58s (x21 over 8m59s)  horizontal-pod-autoscaler  failed to get memory utilization: unable to get metrics for resource memory: no metrics returned from resource metrics API
+  Normal   SuccessfulRescale             2m13s                   horizontal-pod-autoscaler  New size: 4; reason: memory resource utilization (percentage of request) above target
+  Normal   SuccessfulRescale             57s                     horizontal-pod-autoscaler  New size: 6; reason: memory resource utilization (percentage of request) above target
+
+Команда: kubectl get deployment insuretech-demo-app -o wide
+NAME                  READY   UP-TO-DATE   AVAILABLE   AGE     CONTAINERS   IMAGES             SELECTOR
+insuretech-demo-app   6/6     6            6           9m15s   app          python:3.12-slim   app=insuretech-demo-app
+
+Команда: kubectl get pods -l app=insuretech-demo-app -o wide
+NAME                                   READY   STATUS    RESTARTS   AGE     IP            NODE       NOMINATED NODE   READINESS GATES
+insuretech-demo-app-8464c46c56-d47w6   1/1     Running   0          2m13s   10.244.0.6    minikube   <none>           <none>
+insuretech-demo-app-8464c46c56-fb98f   1/1     Running   0          2m14s   10.244.0.8    minikube   <none>           <none>
+insuretech-demo-app-8464c46c56-gfs4g   1/1     Running   0          58s     10.244.0.10   minikube   <none>           <none>
+insuretech-demo-app-8464c46c56-j5624   1/1     Running   0          2m13s   10.244.0.7    minikube   <none>           <none>
+insuretech-demo-app-8464c46c56-nv67t   1/1     Running   0          3m35s   10.244.0.5    minikube   <none>           <none>
+insuretech-demo-app-8464c46c56-zp4h6   1/1     Running   0          58s     10.244.0.9    minikube   <none>           <none>
+
+Команда: kubectl top pods -l app=insuretech-demo-app
+NAME                                   CPU(cores)   MEMORY(bytes)   
+insuretech-demo-app-8464c46c56-d47w6   1m           18Mi            
+insuretech-demo-app-8464c46c56-fb98f   1m           18Mi            
+insuretech-demo-app-8464c46c56-gfs4g   17m          15Mi            
+insuretech-demo-app-8464c46c56-j5624   1m           18Mi            
+insuretech-demo-app-8464c46c56-nv67t   3m           94Mi            
+insuretech-demo-app-8464c46c56-zp4h6   14m          15Mi            
